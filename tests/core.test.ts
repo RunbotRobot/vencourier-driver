@@ -8,7 +8,7 @@ import { mapLink, computeEtas } from '../src/core/routing';
 import { resolveStop, SEED_RULES } from '../src/core/locations';
 import { dwellMinutes, expectedDwell, recordDwell } from '../src/core/stats';
 import { buildPrintPdf, parsePageRange, planPaperwork } from '../src/core/paperwork';
-import { AIRSPACE_EMAIL, FREEFORM_EMAIL } from './fixtures';
+import { AIRSPACE_EMAIL, FREEFORM_EMAIL } from '../src/core/fixtures';
 
 const TZ = 'America/Los_Angeles';
 const at = (hm: string) => `2026-09-25T${hm}:00.000Z`; // 18:05Z = 11:05 PDT

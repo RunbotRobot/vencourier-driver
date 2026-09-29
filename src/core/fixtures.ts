@@ -1,4 +1,4 @@
-import type { InboundEmail } from '../src/core/parser';
+import type { InboundEmail } from './parser';
 
 /** Modelled on real Airspace job alerts; names, codes and phone numbers are fictional. */
 export const AIRSPACE_EMAIL: InboundEmail = {
@@ -83,3 +83,14 @@ Email: Dispatch<mailto:dispatch@movingforward.vip> OR Work<mailto:darren@example
 Dispatch #: +1(253)555-0104<tel:%20+12535550104>
 Personal #: +1(206)555-0105<tel:%20+12065550105>`,
 };
+
+/** Demo-mode seed data: the two fixtures above plus example paperwork and dispatch text. */
+export const INBOUND_SAMPLES: { email: InboundEmail; pdfs?: { name: string }[]; dispatchFollowUp?: string }[] = [
+  { email: AIRSPACE_EMAIL },
+  {
+    email: FREEFORM_EMAIL,
+    pdfs: [{ name: '9273765.pdf' }, { name: '9273765 awb editor.pdf' }, { name: 'BOL.pdf' }],
+    dispatchFollowUp:
+      'Please ensure the following is completed before tender the shipment to AL.\n * a copy of the MAWB and HAWB must be affixed to the shipment\n * Photos of the labelled shipment must be send to us prior to tendering to the airlines\nPLEASE ENSURE THE LAST PAGE OF THE ALERT IS PRINTED AND AFFIX TO ALL BOXES.',
+  },
+];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseJobEmail } from '../src/core/parser';
 import { stripQuoted } from '../src/core/parser/text';
-import { AIRSPACE_EMAIL, FREEFORM_EMAIL } from './fixtures';
+import { AIRSPACE_EMAIL, FREEFORM_EMAIL } from '../src/core/fixtures';
 
 describe('Airspace parser', async () => {
   const job = await parseJobEmail(AIRSPACE_EMAIL);

@@ -62,13 +62,13 @@ async function api(request: Request, env: Env, ctx: ExecutionContext, url: URL):
 
   if (m === 'POST' && path === '/eta') {
     if (!env.GOOGLE_MAPS_API_KEY) return json({ error: 'GOOGLE_MAPS_API_KEY not configured' }, 501);
-    const b = (await request.json()) as { origin: { lat: number; lng: number }; pickup: string; delivery: string };
+    const b = (await request.json()) as { origin: { lat: number; lng: number }; pickup: string | null; delivery: string };
     const r = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': env.GOOGLE_MAPS_API_KEY, 'X-Goog-FieldMask': 'routes.legs.distanceMeters,routes.legs.duration' },
       body: JSON.stringify({
         origin: { location: { latLng: { latitude: b.origin.lat, longitude: b.origin.lng } } },
-        intermediates: [{ address: b.pickup }],
+        ...(b.pickup ? { intermediates: [{ address: b.pickup }] } : {}),
         destination: { address: b.delivery },
         travelMode: 'DRIVE',
         routingPreference: 'TRAFFIC_AWARE',
@@ -76,9 +76,10 @@ async function api(request: Request, env: Env, ctx: ExecutionContext, url: URL):
     });
     if (!r.ok) return json({ error: `routes api ${r.status}` }, 502);
     const legs = ((await r.json()) as { routes?: { legs: { distanceMeters: number; duration: string }[] }[] }).routes?.[0]?.legs;
-    if (!legs || legs.length < 2) return json({ error: 'no route' }, 502);
+    if (!legs || legs.length < (b.pickup ? 2 : 1)) return json({ error: 'no route' }, 502);
     const leg = (l: { distanceMeters: number; duration: string }) => ({ meters: l.distanceMeters, seconds: parseInt(l.duration, 10) });
-    return json({ toPickup: leg(legs[0]!), pickupToDelivery: leg(legs[1]!) });
+    // With no pickup stop (cargo already onboard) the only leg is current location -> delivery.
+    return json(b.pickup ? { toPickup: leg(legs[0]!), pickupToDelivery: leg(legs[1]!) } : { toPickup: { meters: 0, seconds: 0 }, pickupToDelivery: leg(legs[0]!) });
   }
 
   const jm = path.match(/^\/jobs\/([^/]+)(?:\/(step|message|printed|attachment))?$/);
