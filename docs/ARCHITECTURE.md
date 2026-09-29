@@ -59,8 +59,7 @@ browser (~1800px JPEG, ≈300 KB) before upload; the server enforces a 20 MB tot
   (current location → pickup → delivery); Waze accepts one stop, so it's leg by leg. No map app can encode the
   15-minute pause, so it's shown in the app's own ETA.
 - **Location rules** (`core/locations.ts`) fix where a map app's default pin is wrong. Seeded: Boeing Everett —
-  before 1700, deliveries go to the E70 gate. **Verify that rule's search text** (`E70 Gate, Boeing Everett Factory,
-  Everett, WA`) by tapping "To delivery" once and checking the pin; edit it in Settings.
+  before 1700, deliveries go to the E70 gate. The rule uses the exact address Google Maps shows for the gate (`Gate E70 - Truck Inspection BOEING company, Everett, WA 98203`); it is editable in Settings.
 
 ## Paperwork
 
