@@ -21,7 +21,7 @@ export const SEED_RULES: LocationRule[] = [
     name: 'Boeing Everett — E70 gate before 1700',
     match: 'boeing|3003 w(est)?\\.? casino',
     when: { beforeHhmm: '1700' },
-    destination: { query: 'E70 Gate, Boeing Everett Factory, Everett, WA', label: 'Boeing Everett — E70 gate' },
+    destination: { query: 'Gate E70 - Truck Inspection BOEING company, Everett, WA 98203', label: 'Boeing Everett — E70 gate' },
     note: 'Before 1700, deliveries go to the E70 gate, not the 45-68G guard shack the map shows by default.',
   },
 ];
