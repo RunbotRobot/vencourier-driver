@@ -1,7 +1,8 @@
 import { useState } from 'preact/hooks';
 import { SEED_RULES } from '../../core/locations';
 import { useApp } from '../ctx';
-import { enablePush } from '../push';
+import { enablePush, startGmailAlerts } from '../push';
+import { SetupKeys } from './SetupKeys';
 
 export function Settings({ onClose }: { onClose(): void }) {
   const { settings, setSettings, gateway } = useApp();
@@ -9,6 +10,7 @@ export function Settings({ onClose }: { onClose(): void }) {
   const [rules, setRules] = useState(JSON.stringify(settings.rules, null, 2));
   const [tz, setTz] = useState(settings.timezone);
   const [msg, setMsg] = useState('');
+  const [keys, setKeys] = useState(false);
 
   const save = () => {
     try {
@@ -34,9 +36,14 @@ export function Settings({ onClose }: { onClose(): void }) {
         {gateway.mode === 'live' && (
           <div class="row"><button class="btn" onClick={async () => setMsg(await enablePush(settings.apiToken))}>🔔 Enable job alerts</button></div>
         )}
+        {gateway.mode === 'live' && (
+          <div class="row"><button class="btn" onClick={async () => { setMsg('Starting…'); setMsg(await startGmailAlerts(settings.apiToken)); }}>📬 Start Gmail alerts</button></div>
+        )}
+        <div class="row"><button class="btn" onClick={() => setKeys(true)}>🔑 Generate setup keys (one-time)</button></div>
         {msg && <p class="notice">{msg}</p>}
         <div class="row"><button class="btn" onClick={onClose}>Cancel</button><button class="btn primary" onClick={save}>Save</button></div>
       </div>
+      {keys && <SetupKeys onClose={() => setKeys(false)} />}
     </div>
   );
 }

@@ -1,18 +1,85 @@
-# Setup (one-time, ~30–45 min)
+# Setup — phone only, no terminal (about 45 minutes, once)
 
-1. **Google Cloud project** → enable *Gmail API*, *Cloud Pub/Sub API*, *Routes API*.
-2. **OAuth**: create an OAuth client; consent screen → publish "In production" (see the refresh-token note in
-   ARCHITECTURE.md). Scopes: `gmail.modify`, `gmail.send`. Get a refresh token once (e.g. OAuth Playground with your
-   own client id/secret).
-3. **Pub/Sub**: create topic `vencourier-gmail`; grant `gmail-api-push@system.gserviceaccount.com` the
-   *Pub/Sub Publisher* role on it. After the Worker is deployed, add a **push subscription** to
-   `https://<worker-host>/hooks/gmail?token=<PUBSUB_TOKEN>`.
-4. **Cloudflare**: `npx wrangler d1 create vencourier-driver`, paste the id into `wrangler.toml`, then
-   `npx wrangler d1 execute vencourier-driver --remote --file src/worker/schema.sql`.
-5. **Secrets**: `npm run vapid -- mailto:you@example.com`, then `npx wrangler secret put` for `APP_TOKEN` (make one up),
-   `PUBSUB_TOKEN`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `VAPID_PUBLIC_KEY`,
-   `VAPID_PRIVATE_JWK`, and optionally `GOOGLE_MAPS_API_KEY`, `GEMINI_API_KEY`. Edit `[vars]` in `wrangler.toml`.
-6. `npm run build && npx wrangler deploy`; run the cron once (or `POST /api/sync`) so the Gmail watch starts.
-7. **Phone**: open the site → Add to Home Screen → Settings → paste `APP_TOKEN` → "Enable job alerts".
+Everything below is done in a mobile browser. Google's and Cloudflare's menus change from time to time, so
+names may differ slightly; the intent of each step stays the same. If you get stuck, tell Claude what
+the screen says.
 
-Test safely first by sending yourself a fake job from an address you add to `DISPATCH_SENDERS`.
+**Already done for you:** the Cloudflare database `vencourier-driver` exists with its tables, and its id is in `wrangler.toml`.
+
+Keep a note (Notes app) as you go. You'll collect these values:
+`PROJECT_ID`, `CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN`, `MAPS_KEY`, and your Worker URL.
+Tip: switch your browser to "Desktop site" for the two consoles — they're much easier that way.
+
+## Part 1 — Google Cloud (console.cloud.google.com)
+
+Sign in as runbotrobot@gmail.com.
+
+1. **Create a project.** Project picker (top) → New project → name it `Vencourier`. Write down its **Project ID**
+   (shown under the name; may differ from the name, e.g. `vencourier-123456`) → `PROJECT_ID`.
+2. **Turn on three APIs.** Menu → APIs & Services → Library. Search each, open it, tap Enable:
+   *Gmail API*, *Cloud Pub/Sub API*, *Routes API*. (If it asks for billing for Routes, see the note at the end.)
+3. **Login screen (OAuth).** APIs & Services → OAuth consent screen (newer console: "Google Auth Platform").
+   - User type: **External**. App name `Vencourier`, your email for support and developer contact.
+   - Data access / Scopes: add `https://www.googleapis.com/auth/gmail.modify` and `https://www.googleapis.com/auth/gmail.send`.
+   - **Publish the app** (Audience → *Publish app* → In production). Do this now: apps left in "Testing" have their
+     login expire every 7 days. You'll see an "unverified app" warning later; it's only you, so continue past it.
+4. **Credentials.** APIs & Services → Credentials → Create credentials → **OAuth client ID** → type **Web application**.
+   Under *Authorized redirect URIs* add exactly `https://developers.google.com/oauthplayground`. Create.
+   Copy the **Client ID** → `CLIENT_ID` and **Client secret** → `CLIENT_SECRET`.
+5. **Get your refresh token** (this is how the server stays logged in to your Gmail):
+   - Open **developers.google.com/oauthplayground**. Tap the gear ⚙ → tick **Use your own OAuth credentials**
+     → paste `CLIENT_ID` and `CLIENT_SECRET`.
+   - In the left box (Step 1) type the two scopes above (space-separated) → **Authorize APIs** → choose your account →
+     continue past the "unverified" warning → Allow.
+   - Step 2: **Exchange authorization code for tokens**. Copy the **Refresh token** → `REFRESH_TOKEN`.
+6. **Maps key** (for distance/ETA). Credentials → Create credentials → **API key**. Copy it → `MAPS_KEY`.
+   Then tap the key → *API restrictions* → Restrict key → **Routes API** → Save.
+7. **Pub/Sub topic** (Gmail's push channel). Menu → Pub/Sub → Topics → Create topic → ID `vencourier-gmail`
+   (leave "Add default subscription" ticked or not; either works). Then open the topic → **Permissions**
+   (or "Add principal") → principal `gmail-api-push@system.gserviceaccount.com` → role **Pub/Sub Publisher** → Save.
+
+**Tell Claude your `PROJECT_ID`** — Claude will commit it into `wrangler.toml` (the topic name is
+`projects/PROJECT_ID/topics/vencourier-gmail`).
+
+## Part 2 — Cloudflare (dash.cloudflare.com)
+
+1. **Deploy from GitHub.** Workers & Pages → Create → **Import a repository** (connect GitHub if asked, allow the
+   `vencourier-driver` repo) → branch `main`. Use:
+   - Build command: `npm run build`
+   - Deploy command: `npx wrangler deploy`
+   The Worker name must be `vencourier-driver` (it is in `wrangler.toml`). Every push to `main` redeploys automatically.
+2. **Make your secrets.** Open your deployed app's URL (`https://vencourier-driver.<something>.workers.dev`). Tap ⚙ Settings →
+   **Generate setup keys**. It shows four values; keep this screen open.
+3. **Add secrets.** In Cloudflare: your Worker → Settings → **Variables and Secrets** → Add, type **Secret**, one for each:
+
+   | Name | Value from |
+   |---|---|
+   | `APP_TOKEN`, `PUBSUB_TOKEN`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_JWK` | the four values on the Setup keys screen (Copy buttons) |
+   | `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` | `CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN` |
+   | `GOOGLE_MAPS_API_KEY` | `MAPS_KEY` |
+
+   Save/deploy. (Optional later: `GEMINI_API_KEY` + `GEMINI_MODEL`, see ARCHITECTURE.md before enabling.)
+
+## Part 3 — connect them
+
+1. **Pub/Sub → your Worker.** Google Cloud → Pub/Sub → Subscriptions → Create subscription → ID `vencourier-push`,
+   topic `vencourier-gmail`, delivery type **Push**, endpoint URL
+   `https://vencourier-driver.<something>.workers.dev/hooks/gmail?token=<PUBSUB_TOKEN>` → Create.
+2. **In the app** (⚙ Settings): paste `APP_TOKEN` into *Server access token* → Save (the page reloads, and the
+   DEMO badge disappears).
+3. Tap **📬 Start Gmail alerts**. It should say alerts started. (The server renews this automatically every day.)
+4. Tap **🔔 Enable job alerts** and allow notifications.
+   **iPhone:** first Share → *Add to Home Screen*, then open the app from the Home Screen icon and do this step there.
+
+## Test it safely
+
+Send an email to yourself from another of your addresses, add that address to `DISPATCH_SENDERS` in
+`wrangler.toml` (ask Claude to commit it), and check that a job appears with a notification within seconds. Decline it.
+Only mail from `DISPATCH_SENDERS` ever becomes a job.
+
+## Notes
+
+- **Billing:** Google may require a billing account to enable Routes, and Cloudflare's Workers/D1 free tiers should cover
+  one driver. Check both current limits. Without a Maps key everything works except in-app distance/ETA (map links still work).
+- **Security:** anyone with `APP_TOKEN` can act as you — treat it like a password. If it leaks, change the Cloudflare
+  secret and update the app's Settings.

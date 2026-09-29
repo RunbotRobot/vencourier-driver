@@ -19,3 +19,11 @@ export async function enablePush(token: string): Promise<string> {
   const res = await fetch('/api/push/subscribe', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(sub) });
   return res.ok ? 'Job alerts are on for this device.' : 'Could not register for alerts.';
 }
+
+/** Tells the server to start Gmail push notifications (needs the Google credentials to be set up). */
+export async function startGmailAlerts(token: string): Promise<string> {
+  const res = await fetch('/api/watch', { method: 'POST', headers: { authorization: `Bearer ${token}` } });
+  if (res.ok) return 'Gmail alerts started. New dispatch emails will now arrive as jobs.';
+  const err = (await res.json().catch(() => ({}))) as { error?: string };
+  return `Could not start Gmail alerts: ${err.error ?? res.statusText}`;
+}

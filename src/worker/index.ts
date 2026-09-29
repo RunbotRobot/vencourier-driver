@@ -47,6 +47,8 @@ async function api(request: Request, env: Env, ctx: ExecutionContext, url: URL):
 
   if (m === 'GET' && path === '/config') return json({ vapidPublicKey: env.VAPID_PUBLIC_KEY, myEmail: env.MY_EMAIL, mapsConfigured: !!env.GOOGLE_MAPS_API_KEY });
   if (m === 'GET' && path === '/jobs') return json(await listJobs(env));
+  // Starts (or renews) the Gmail push watch, then catches up. Idempotent; the daily cron does the same.
+  if (m === 'POST' && path === '/watch') { await renewWatch(env); return json({ processed: await syncMailbox(env) }); }
   if (m === 'POST' && path === '/sync') return json({ processed: await syncMailbox(env) });
   if (m === 'GET' && path === '/notice') return json(JSON.parse((await kvGet(env, 'notice')) ?? 'null'));
   if (path === '/settings') {

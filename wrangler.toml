@@ -12,7 +12,7 @@ run_worker_first = ["/api/*", "/hooks/*"]
 [[d1_databases]]
 binding = "DB"
 database_name = "vencourier-driver"
-database_id = "REPLACE_WITH_D1_ID"   # wrangler d1 create vencourier-driver
+database_id = "1aad0d98-39f8-4f14-b9c3-703be5a9b3bc"
 
 # Renew the Gmail watch (expires every 7 days) and catch up on missed pushes.
 [triggers]
