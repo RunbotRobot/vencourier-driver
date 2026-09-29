@@ -18,11 +18,18 @@ Sign in as runbotrobot@gmail.com.
    (shown under the name; may differ from the name, e.g. `vencourier-123456`) → `PROJECT_ID`.
 2. **Turn on three APIs.** Menu → APIs & Services → Library. Search each, open it, tap Enable:
    *Gmail API*, *Cloud Pub/Sub API*, *Routes API*. (If it asks for billing for Routes, see the note at the end.)
-3. **Login screen (OAuth).** APIs & Services → OAuth consent screen (newer console: "Google Auth Platform").
-   - User type: **External**. App name `Vencourier`, your email for support and developer contact.
-   - Data access / Scopes: add `https://www.googleapis.com/auth/gmail.modify` and `https://www.googleapis.com/auth/gmail.send`.
-   - **Publish the app** (Audience → *Publish app* → In production). Do this now: apps left in "Testing" have their
-     login expire every 7 days. You'll see an "unverified app" warning later; it's only you, so continue past it.
+3. **Login screen (OAuth)** — menu → APIs & Services → OAuth consent screen (newer console: "Google Auth Platform"). Do these in order:
+   1. **Branding** page: only three things are required — *App name* (`Vencourier - Driver` is fine), *User support email* and
+      *Developer contact email* (both your Gmail). Leave logo, home page, privacy policy and authorized domains **blank**
+      (Google only insists on domains if you add links). Save.
+   2. **Audience** page: user type **External**. Under **Test users**, **add runbotrobot@gmail.com** (your own account
+      too — without this, sign-in fails with "Error 403: access_denied … can only be accessed by developer-approved testers").
+   3. **Data access** page: add the scopes `https://www.googleapis.com/auth/gmail.modify` and
+      `https://www.googleapis.com/auth/gmail.send`. Save.
+   4. **Audience** page again: **Publish app** → In production (confirm). Apps left in "Testing" have their login expire
+      every 7 days. Publishing may show an "unverified app" notice; that's expected, and it only affects you.
+   If step 4 still refuses, keep going in Testing for now (your test-user entry is enough to sign in), and repeat Part 1
+   step 5 after publishing works — a token obtained while in Testing may expire in 7 days.
 4. **Credentials.** APIs & Services → Credentials → Create credentials → **OAuth client ID** → type **Web application**.
    Under *Authorized redirect URIs* add exactly `https://developers.google.com/oauthplayground`. Create.
    Copy the **Client ID** → `CLIENT_ID` and **Client secret** → `CLIENT_SECRET`.
@@ -38,8 +45,8 @@ Sign in as runbotrobot@gmail.com.
    (leave "Add default subscription" ticked or not; either works). Then open the topic → **Permissions**
    (or "Add principal") → principal `gmail-api-push@system.gserviceaccount.com` → role **Pub/Sub Publisher** → Save.
 
-**Tell Claude your `PROJECT_ID`** — Claude will commit it into `wrangler.toml` (the topic name is
-`projects/PROJECT_ID/topics/vencourier-gmail`).
+**Project ID:** `vencourier-driver` — already committed into `wrangler.toml` (topic
+`projects/vencourier-driver/topics/vencourier-gmail`).
 
 ## Part 2 — Cloudflare (dash.cloudflare.com)
 

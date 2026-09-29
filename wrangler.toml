@@ -21,7 +21,7 @@ crons = ["0 13 * * *"]
 [vars]
 MY_EMAIL = "runbotrobot@gmail.com"
 DISPATCH_SENDERS = "dispatch@movingforward.vip"
-PUBSUB_TOPIC = "projects/REPLACE_PROJECT/topics/vencourier-gmail"
+PUBSUB_TOPIC = "projects/vencourier-driver/topics/vencourier-gmail"
 VAPID_SUBJECT = "mailto:runbotrobot@gmail.com"
 # GEMINI_MODEL = "<a current Gemini Flash model id>"
 
