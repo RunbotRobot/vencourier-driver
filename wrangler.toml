@@ -1,0 +1,29 @@
+name = "vencourier-driver"
+main = "src/worker/index.ts"
+compatibility_date = "2025-09-01"
+
+# The PWA (built into dist/) is served by the same Worker, so the API is same-origin.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/hooks/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vencourier-driver"
+database_id = "REPLACE_WITH_D1_ID"   # wrangler d1 create vencourier-driver
+
+# Renew the Gmail watch (expires every 7 days) and catch up on missed pushes.
+[triggers]
+crons = ["0 13 * * *"]
+
+[vars]
+MY_EMAIL = "runbotrobot@gmail.com"
+DISPATCH_SENDERS = "dispatch@movingforward.vip"
+PUBSUB_TOPIC = "projects/REPLACE_PROJECT/topics/vencourier-gmail"
+VAPID_SUBJECT = "mailto:runbotrobot@gmail.com"
+# GEMINI_MODEL = "<a current Gemini Flash model id>"
+
+# Secrets (wrangler secret put …): APP_TOKEN, PUBSUB_TOKEN, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET,
+# GMAIL_REFRESH_TOKEN, VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK, and optionally GEMINI_API_KEY, GOOGLE_MAPS_API_KEY.

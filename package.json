@@ -6,10 +6,11 @@
   "description": "Vencourier - Driver: courier driver job management PWA",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/worker",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vapid": "node scripts/gen-vapid.mjs"
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",
